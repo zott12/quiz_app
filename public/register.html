@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Cadastro & Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h2>Cadastro de Usuário</h2>
+  <form id="form-cadastro">
+    <input type="text"     name="nome"  placeholder="Nome"     required>
+    <input type="email"    name="email" placeholder="Email"    required>
+    <input type="password" name="senha" placeholder="Senha"    required>
+    <button type="submit">Cadastrar</button>
+  </form>
+  <p id="mensagem-cadastro"></p>
+
+  <hr/>
+
+  <h2>Login</h2>
+  <form id="form-login">
+    <input type="email"    name="email" placeholder="Email" required>
+    <input type="password" name="senha" placeholder="Senha" required>
+    <button type="submit">Entrar</button>
+  </form>
+  <p id="mensagem-login"></p>
+
+  <script>
+    const formCadastro = document.getElementById('form-cadastro');
+    const msgCadastro  = document.getElementById('mensagem-cadastro');
+    formCadastro.onsubmit = async e => {
+      e.preventDefault();
+      msgCadastro.textContent = '';
+      const dados = Object.fromEntries(new FormData(formCadastro).entries());
+      const res = await fetch('/register', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(dados)
+      });
+      const txt = await res.text();
+      msgCadastro.textContent = txt;
+      if (res.ok) formCadastro.reset();
+    };
+
+    // Login
+    const formLogin = document.getElementById('form-login');
+    const msgLogin  = document.getElementById('mensagem-login');
+    formLogin.onsubmit = async e => {
+      e.preventDefault();
+      msgLogin.textContent = '';
+      const creds = Object.fromEntries(new FormData(formLogin).entries());
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(creds)
+      });
+      if (!res.ok) {
+        msgLogin.textContent = await res.text();
+        return;
+      }
+      window.location.href = '/index.html';
+    };
+  </script>
+</body>
+</html>

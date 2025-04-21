@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Conhecimento Geral</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="mode-select">
+        <label>Escolha o modo de jogo:</label><br>
+        <button onclick="startMode('cronometro')">⏱ Modo Cronometrado</button>
+        <button onclick="startMode('maratona')">🏃‍♂️ Modo Maratona</button>
+      </div>
+      
+      <div id="timer" style="display: none;">⏳ Tempo: <span id="time-left">60</span>s</div>
+      <div id="lives" style="display: none;">❤️ Vidas: <span id="life-count">3</span></div>
+      
+    <div id="category-select">
+        <label for="category">Categoria:</label>
+        <select id="category">
+          <option value="">-- Selecione --</option>
+          <option value="geral">Geral</option>
+          <option value="esportes">Esportes</option>
+          <option value="ciencia">Ciência</option>
+        </select>
+        
+      
+        <label for="subcategory">Subcategoria:</label>
+        <select id="subcategory">
+          <option value="">-- Selecione --</option>
+        </select>
+      
+        <button id="start-quiz">Começar Quiz</button>
+      </div>
+
+<button id="btn-leaderboard" class="leaderboard-btn">
+  🏆 Ver Leaderboard
+</button>
+      
+      <div id="quiz" style="display: none;">
+      </div>
+      
+<div id="banner" style="margin: 20px 0; text-align: center;">
+  <a href="https://produtoexemplo.com" target="_blank">
+    <img src="banner.png" width="300" height="80" alt="Banner">
+  </a>
+</div>
+
+
+    <button id="theme-toggle">🌙 Modo Escuro</button>
+    <div id="quiz-container">
+        <h1>Quiz de Conhecimento Geral</h1>
+        <div id="question-container">
+            <p id="question-text">Pergunta aparecerá aqui</p>
+            <ul id="answers-list">
+            </ul>
+        </div>
+        <button id="next-button">Próxima Pergunta</button>
+        <button id="btn-reset" class="reset-btn">🔄 Reiniciar Quiz</button>
+        <div id="score-container">
+            <p>Pontuação: <span id="score">0</span></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
