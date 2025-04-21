@@ -7,3 +7,6 @@ um webapp para responder perguntas gerais
 - Express.js
 - MySQL
 - HTML/CSS/Js
+
+Tem o node_modules
+ainda esta em prototipo
