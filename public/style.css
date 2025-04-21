@@ -1,0 +1,187 @@
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f7fa;
+  color: #333;
+  padding: 2rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.dark {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+h1, h2 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* Container do quiz */
+#quiz {
+  max-width: 600px;
+  margin: 2rem auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+body.dark #quiz {
+  background: #1e1e1e;
+  box-shadow: 0 0 15px rgba(255,255,255,0.05);
+}
+
+/* Pergunta */
+#question-text {
+  font-size: 1.3rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Respostas */
+#answers-list {
+  list-style: none;
+}
+#answers-list li {
+  background: #f0f0f0;
+  margin-bottom: 0.8rem;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+#answers-list li:hover {
+  background-color: #e0e0e0;
+}
+body.dark #answers-list li {
+  background: #2a2a2a;
+}
+body.dark #answers-list li:hover {
+  background: #3a3a3a;
+}
+
+/* Acerto/Erro */
+.correct {
+  background-color: #4caf50 !important;
+  color: white;
+}
+.incorrect {
+  background-color: #f44336 !important;
+  color: white;
+}
+
+/* Botões */
+button {
+  padding: 10px 20px;
+  background-color: #3f51b5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  display: inline-block;
+  margin-top: 1rem;
+}
+button:hover {
+  background-color: #303f9f;
+}
+
+/* Score */
+#score {
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+/* Tema */
+#theme-toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: #333;
+  color: #fff;
+  border-radius: 50px;
+  padding: 8px 16px;
+  z-index: 1000;
+}
+body.dark #theme-toggle {
+  background: #f0f0f0;
+  color: #000;
+}
+
+/* Categoria e Subcategoria */
+#category-select {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  text-align: center;
+}
+body.dark #category-select {
+  background: #1e1e1e;
+}
+
+select {
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin: 0.5rem;
+  min-width: 150px;
+}
+
+/* Leaderboard btn */
+#btn-leaderboard {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background-color: #ff9800;
+  color: white;
+  border-radius: 6px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+#btn-leaderboard:hover {
+  background-color: #fb8c00;
+}
+
+/* Timer e Vidas */
+#timer, #lives {
+  text-align: center;
+  margin: 1rem auto;
+  font-size: 1.1rem;
+}
+#timer span, #lives span {
+  font-weight: bold;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+  #quiz, #category-select {
+    padding: 1.5rem;
+  }
+  button, select {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+}
+.reset-btn {
+  background-color: #e91e63;
+  margin-left: 10px;
+}
+
+.reset-btn:hover {
+  background-color: #c2185b;
+}

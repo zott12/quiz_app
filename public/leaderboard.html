@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Leaderboard</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <h1>🏆 Leaderboard</h1>
+
+  <div>
+    Período:
+    <select id="period">
+      <option value="day">Hoje</option>
+      <option value="week">Semana</option>
+      <option value="all" selected>Geral</option>
+    </select>
+
+    Escopo:
+    <select id="scope">
+      <option value="global">Global</option>
+      <option value="friends">Meus Amigos</option>
+    </select>
+
+    <button id="btn-refresh">Atualizar</button>
+  </div>
+
+  <table id="tbl-board">
+    <thead>
+      <tr><th>Posição</th><th>Nome</th><th>Pontuação</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    async function fetchBoard() {
+      const period = document.getElementById('period').value;
+      const scope  = document.getElementById('scope').value;
+      const res = await fetch(`/leaderboard?period=${period}&scope=${scope}`);
+      if (!res.ok) return alert('Erro ao carregar leaderboard');
+      const data = await res.json();
+      const tbody = document.querySelector('#tbl-board tbody');
+      tbody.innerHTML = '';
+      data.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i+1}</td><td>${row.nome}</td><td>${row.total_score}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('btn-refresh').onclick = fetchBoard;
+    // carrega ao abrir
+    fetchBoard();
+  </script>
+  
+  <p><a href="/index.html">← Voltar ao Quiz</a></p>
+</body>
+</html>
