@@ -5,6 +5,69 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Cadastro & Login</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 3rem auto;
+      padding: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #f9f9f9;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #aaa;
+    }
+
+    button {
+      background-color: #3f51b5;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #303f9f;
+    }
+
+    #mensagem-cadastro,
+    #mensagem-login {
+      text-align: center;
+      font-weight: bold;
+      margin-top: -0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .sucesso {
+      color: green;
+    }
+
+    .erro {
+      color: red;
+    }
+
+    hr {
+      margin: 2rem 0;
+    }
+  </style>
 </head>
 <body>
   <h2>Cadastro de Usuário</h2>
@@ -29,37 +92,57 @@
   <script>
     const formCadastro = document.getElementById('form-cadastro');
     const msgCadastro  = document.getElementById('mensagem-cadastro');
+
     formCadastro.onsubmit = async e => {
       e.preventDefault();
       msgCadastro.textContent = '';
+      msgCadastro.className = '';
       const dados = Object.fromEntries(new FormData(formCadastro).entries());
+
       const res = await fetch('/register', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(dados)
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(dados),
+        credentials: 'include'
       });
+
       const txt = await res.text();
       msgCadastro.textContent = txt;
+      msgCadastro.className = res.ok ? 'sucesso' : 'erro';
       if (res.ok) formCadastro.reset();
     };
 
-    // Login
     const formLogin = document.getElementById('form-login');
     const msgLogin  = document.getElementById('mensagem-login');
+
     formLogin.onsubmit = async e => {
       e.preventDefault();
       msgLogin.textContent = '';
+      msgLogin.className = '';
+
       const creds = Object.fromEntries(new FormData(formLogin).entries());
+
       const res = await fetch('/login', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify(creds)
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(creds),
+        credentials: 'include'
       });
+
+      const txt = await res.text();
+
       if (!res.ok) {
-        msgLogin.textContent = await res.text();
+        msgLogin.textContent = txt;
+        msgLogin.className = 'erro';
         return;
       }
-      window.location.href = '/index.html';
+
+      // Se o texto retornado for "admin", redireciona para página do admin
+      if (txt === 'admin') {
+        window.location.href = '/admin.html';
+      } else {
+        window.location.href = '/index.html';
+      }
     };
   </script>
 </body>
