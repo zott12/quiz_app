@@ -1,68 +1,234 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz de Conhecimento Geral</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz de Conhecimento Geral</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    #btn-logout, #btn-login {
+      position: fixed;
+      bottom: 1rem;
+      background-color: #c0392b;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      z-index: 1000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #btn-logout {
+      left: 1rem;
+    }
+    #btn-login {
+      left: 120px;
+      background-color: #27ae60;
+    }
+    #btn-logout:hover {
+      background-color: #a93226;
+    }
+    #btn-login:hover {
+      background-color: #1e8449;
+    }
+    .hidden {
+      display: none !important;
+    }
+    #mode-select button {
+      margin-right: 0.5rem;
+      padding: 8px 16px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    #mode-select button.selected {
+      background-color: #2980b9;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+    }
+    form input, form textarea {
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 1rem;
+    }
+    form button {
+      padding: 8px 16px;
+      font-size: 1rem;
+      background-color: #2980b9;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    form button:hover {
+      background-color: #1c5984;
+    }
+    #contato {
+      margin-top: 40px;
+      border-top: 1px solid #ccc;
+      padding-top: 20px;
+    }
+  </style>
 </head>
 <body>
-    <div id="mode-select">
-        <label>Escolha o modo de jogo:</label><br>
-        <button onclick="startMode('cronometro')">⏱ Modo Cronometrado</button>
-        <button onclick="startMode('maratona')">🏃‍♂️ Modo Maratona</button>
-      </div>
-      
-      <div id="timer" style="display: none;">⏳ Tempo: <span id="time-left">60</span>s</div>
-      <div id="lives" style="display: none;">❤️ Vidas: <span id="life-count">3</span></div>
-      
-    <div id="category-select">
-        <label for="category">Categoria:</label>
-        <select id="category">
-          <option value="">-- Selecione --</option>
-          <option value="geral">Geral</option>
-          <option value="esportes">Esportes</option>
-          <option value="ciencia">Ciência</option>
-        </select>
-        
-      
-        <label for="subcategory">Subcategoria:</label>
-        <select id="subcategory">
-          <option value="">-- Selecione --</option>
-        </select>
-      
-        <button id="start-quiz">Começar Quiz</button>
-      </div>
 
-<button id="btn-leaderboard" class="leaderboard-btn">
-  🏆 Ver Leaderboard
-</button>
-      
-      <div id="quiz" style="display: none;">
-      </div>
-      
-<div id="banner" style="margin: 20px 0; text-align: center;">
-  <a href="https://produtoexemplo.com" target="_blank">
-    <img src="banner.png" width="300" height="80" alt="Banner">
-  </a>
-</div>
+  <a href="/logout" id="btn-logout">🚪 Sair</a>
+  <a href="register.html" id="btn-login">🔑 Login</a>
 
+  <div id="mode-select">
+    <label>Escolha o modo de jogo:</label><br />
+    <button id="btn-cronometro">⏱ Modo Cronometrado</button>
+    <button id="btn-maratona">🏃‍♂️ Modo Maratona</button>
+  </div>
 
-    <button id="theme-toggle">🌙 Modo Escuro</button>
-    <div id="quiz-container">
-        <h1>Quiz de Conhecimento Geral</h1>
-        <div id="question-container">
-            <p id="question-text">Pergunta aparecerá aqui</p>
-            <ul id="answers-list">
-            </ul>
-        </div>
-        <button id="next-button">Próxima Pergunta</button>
-        <button id="btn-reset" class="reset-btn">🔄 Reiniciar Quiz</button>
-        <div id="score-container">
-            <p>Pontuação: <span id="score">0</span></p>
-        </div>
+  <div id="timer" class="hidden">⏳ Tempo: <span id="time-left">60</span>s</div>
+  <div id="lives" class="hidden">❤️ Vidas: <span id="life-count">3</span></div>
+
+  <div id="category-select">
+    <label for="category">Categoria:</label>
+    <select id="category">
+      <option value="">-- Selecione --</option>
+    </select>
+    <button id="start-quiz">Começar Quiz</button>
+  </div>
+
+  <button id="btn-leaderboard" class="leaderboard-btn">🏆 Ver Leaderboard</button>
+  <button id="btn-friends" class="friends-btn">👥 Meus Amigos</button>
+
+  <div id="quiz" class="hidden"></div>
+
+  <div id="banner" style="margin: 20px 0; text-align: center;">
+    <a href="https://produtoexemplo.com" target="_blank">
+      <img src="banner.png" width="300" height="80" alt="Banner" />
+    </a>
+  </div>
+
+  <button id="theme-toggle">🌙 Modo Escuro</button>
+
+  <main id="quiz-container" class="hidden">
+    <h1>Quiz de Conhecimento Geral</h1>
+    <div id="question-container">
+      <p id="question-text" aria-live="polite">Pergunta aparecerá aqui</p>
+      <ul id="answers-list"></ul>
     </div>
+    <button id="next-button">Próxima Pergunta</button>
+    <button id="btn-reset" class="reset-btn">🔄 Reiniciar Quiz</button>
+    <div id="score-container">
+      <p>Pontuação: <span id="score">0</span></p>
+    </div>
+  </main>
 
-    <script src="script.js"></script>
+  <!-- Seção de Contato com os Desenvolvedores -->
+  <section id="contato">
+    <h2>📬 Fale com os Desenvolvedores</h2>
+    <form id="form-contato">
+      <label for="nome">Nome:</label><br>
+      <input type="text" id="nome" name="nome" required><br>
+
+      <label for="email">Email:</label><br>
+      <input type="email" id="email" name="email" required><br>
+
+      <label for="mensagem">Mensagem:</label><br>
+      <textarea id="mensagem" name="mensagem" rows="4" required></textarea><br>
+
+      <button type="submit">Enviar Mensagem</button>
+    </form>
+    <p id="resposta-contato" style="margin-top: 10px; font-weight: bold;"></p>
+  </section>
+
+  <script src="script.js"></script>
+  <script>
+    let selectedMode = null;
+
+    function selectMode(mode) {
+      selectedMode = mode;
+      document.getElementById('btn-cronometro').classList.remove('selected');
+      document.getElementById('btn-maratona').classList.remove('selected');
+
+      if (mode === 'cronometro') {
+        document.getElementById('btn-cronometro').classList.add('selected');
+      } else if (mode === 'maratona') {
+        document.getElementById('btn-maratona').classList.add('selected');
+      }
+    }
+
+    document.getElementById('btn-cronometro').addEventListener('click', () => selectMode('cronometro'));
+    document.getElementById('btn-maratona').addEventListener('click', () => selectMode('maratona'));
+
+    async function carregarCategorias() {
+      try {
+        const res = await fetch('/categories');
+        if (!res.ok) throw new Error('Falha ao carregar categorias');
+        const categorias = await res.json();
+
+        const selectCat = document.getElementById('category');
+        selectCat.innerHTML = '<option value="">-- Selecione --</option>';
+
+        categorias.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent = cat.name;
+          selectCat.appendChild(option);
+        });
+      } catch (err) {
+        alert('Erro ao carregar categorias: ' + err.message);
+      }
+    }
+
+    carregarCategorias();
+
+    document.getElementById('btn-leaderboard').addEventListener('click', () => {
+      window.location.href = '/leaderboard.html';
+    });
+
+    document.getElementById('btn-friends').addEventListener('click', () => {
+      window.location.href = '/friends.html';
+    });
+
+    document.getElementById('start-quiz').addEventListener('click', () => {
+      const categoryId = document.getElementById('category').value;
+
+      if (!selectedMode) {
+        alert('Por favor, selecione um modo de jogo.');
+        return;
+      }
+
+      if (!categoryId) {
+        alert('Por favor, selecione uma categoria.');
+        return;
+      }
+
+      startQuiz(selectedMode, categoryId);
+    });
+
+    // Enviar formulário de contato
+    document.getElementById('form-contato').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nome = document.getElementById('nome').value;
+      const email = document.getElementById('email').value;
+      const mensagem = document.getElementById('mensagem').value;
+      const resposta = document.getElementById('resposta-contato');
+
+      try {
+        const res = await fetch('/contato', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, email, mensagem })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+
+        resposta.textContent = 'Mensagem enviada com sucesso!';
+        resposta.style.color = 'green';
+        document.getElementById('form-contato').reset();
+      } catch (err) {
+        resposta.textContent = 'Erro ao enviar: ' + err.message;
+        resposta.style.color = 'red';
+      }
+    });
+  </script>
 </body>
 </html>
