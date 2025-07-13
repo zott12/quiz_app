@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meus Amigos - Quiz App</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; }
+    h1 { text-align: center; }
+    #add-friend-form { margin-bottom: 1rem; }
+    input[type="email"] { width: 70%; padding: 8px; font-size: 1rem; }
+    button { padding: 8px 12px; font-size: 1rem; cursor: pointer; }
+    ul { list-style: none; padding-left: 0; }
+    li { padding: 8px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
+    li button { background-color: #c0392b; color: white; border: none; border-radius: 4px; }
+    li button:hover { background-color: #e74c3c; }
+    #back-btn { margin-top: 1rem; display: inline-block; text-decoration: none; color: #2c3e50; }
+  </style>
+</head>
+<body>
+
+  <h1>Meus Amigos</h1>
+
+  <form id="add-friend-form">
+    <input type="email" id="friend-email" placeholder="Email do amigo" required />
+    <button type="submit">Adicionar Amigo</button>
+  </form>
+
+  <ul id="friends-list">
+    <!-- Lista de amigos aqui -->
+  </ul>
+
+  <a href="index.html" id="back-btn">← Voltar ao Quiz</a>
+
+  <script>
+    const friendsList = document.getElementById('friends-list');
+    const addFriendForm = document.getElementById('add-friend-form');
+    const friendEmailInput = document.getElementById('friend-email');
+
+    async function loadFriends() {
+      try {
+        const res = await fetch('/friends', { credentials: 'include' });
+        if (res.status === 401) {
+          alert('Você precisa estar logado.');
+          window.location.href = '/';
+          return;
+        }
+        if (!res.ok) throw new Error('Erro ao carregar amigos');
+        const friends = await res.json();
+
+        friendsList.innerHTML = '';
+        if (friends.length === 0) {
+          friendsList.innerHTML = '<li>Você não tem amigos adicionados.</li>';
+          return;
+        }
+
+        friends.forEach(friend => {
+          const li = document.createElement('li');
+          li.textContent = friend.nome + ' (' + friend.email + ')';
+
+          const btnRemove = document.createElement('button');
+          btnRemove.textContent = 'Remover';
+          btnRemove.addEventListener('click', () => removeFriend(friend.id));
+
+          li.appendChild(btnRemove);
+          friendsList.appendChild(li);
+        });
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    addFriendForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = friendEmailInput.value.trim();
+      if (!email) return;
+
+      try {
+        const res = await fetch('/friends', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ friendEmail: email })
+        });
+        if (res.status === 401) {
+          alert('Sessão expirada. Faça login novamente.');
+          window.location.href = '/';
+          return;
+        }
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || 'Erro ao adicionar amigo');
+        }
+        alert('Amigo adicionado com sucesso!');
+        friendEmailInput.value = '';
+        loadFriends();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    async function removeFriend(friendId) {
+      if (!confirm('Tem certeza que deseja remover este amigo?')) return;
+
+      try {
+        const res = await fetch(`/friends/${friendId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+        if (res.status === 401) {
+          alert('Sessão expirada. Faça login novamente.');
+          window.location.href = '/';
+          return;
+        }
+        if (!res.ok) throw new Error('Erro ao remover amigo');
+        alert('Amigo removido com sucesso!');
+        loadFriends();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    // Carregar amigos ao abrir a página
+    loadFriends();
+  </script>
+</body>
+</html>
