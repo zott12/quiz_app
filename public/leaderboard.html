@@ -36,16 +36,38 @@
     async function fetchBoard() {
       const period = document.getElementById('period').value;
       const scope  = document.getElementById('scope').value;
-      const res = await fetch(`/leaderboard?period=${period}&scope=${scope}`);
-      if (!res.ok) return alert('Erro ao carregar leaderboard');
-      const data = await res.json();
-      const tbody = document.querySelector('#tbl-board tbody');
-      tbody.innerHTML = '';
-      data.forEach((row, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${i+1}</td><td>${row.nome}</td><td>${row.total_score}</td>`;
-        tbody.appendChild(tr);
-      });
+      const btn = document.getElementById('btn-refresh');
+
+      btn.disabled = true;
+      btn.textContent = 'Carregando...';
+
+      try {
+        const res = await fetch(`/leaderboard?period=${period}&scope=${scope}`, {
+          credentials: 'include'  // Envia cookie da sessão para backend
+        });
+
+        if (!res.ok) throw new Error('Erro na requisição ao servidor.');
+
+        const data = await res.json();
+        const tbody = document.querySelector('#tbl-board tbody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align:center">Nenhum dado encontrado</td></tr>';
+          return;
+        }
+
+        data.forEach((row, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${i + 1}</td><td>${row.nome}</td><td>${row.total_score}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        alert('Erro ao carregar leaderboard: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Atualizar';
+      }
     }
 
     document.getElementById('btn-refresh').onclick = fetchBoard;
