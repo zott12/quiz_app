@@ -1,326 +1,291 @@
-const questionsOriginal = [
-    {
-      question: "Qual é a capital do Brasil?",
-      answers: ["Brasília", "Rio de Janeiro", "São Paulo", "Salvador"],
-      correctAnswer: "Brasília"
-    },
-    {
-      question: "Quem pintou a Mona Lisa?",
-      answers: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"],
-      correctAnswer: "Leonardo da Vinci"
-    },
-    {
-      question: "Qual é o maior planeta do sistema solar?",
-      answers: ["Terra", "Júpiter", "Saturno", "Netuno"],
-      correctAnswer: "Júpiter"
-    },
-    {
-      question: "Qual é a fórmula da água?",
-      answers: ["H2O", "CO2", "NaCl", "O2"],
-      correctAnswer: "H2O"
-    }
-  ];
+let questions = [];
+let currentQuestionIndex = 0;
+let score = 0;
+let currentQuizSessionId = null;
+let selectedGameModeName = null;
+let timerInterval = null;
+let timeLeft = 60; // segundos para modo cronometro
+let lives = 3; // vidas para modo maratona
 
-  const allQuestions = {
-    esportes: {
-      futebol: [
-        {
-          question: "Quantos jogadores um time de futebol tem em campo?",
-          answers: ["9", "10", "11", "12"],
-          correctAnswer: "11"
-        },
-        {
-          question: "Qual país venceu a Copa do Mundo de 2002?",
-          answers: ["Alemanha", "Brasil", "Argentina", "França"],
-          correctAnswer: "Brasil"
-        }
-      ]
-    },
-    ciencia: {
-      astronomia: [
-        {
-          question: "Qual é o planeta mais próximo do Sol?",
-          answers: ["Terra", "Vênus", "Mercúrio", "Marte"],
-          correctAnswer: "Mercúrio"
-        },
-        {
-          question: "Quantos planetas existem no Sistema Solar?",
-          answers: ["7", "8", "9", "10"],
-          correctAnswer: "8"
-        }
-      ]
-    }
-  };
-  
+// Elementos DOM
+const questionText = document.getElementById('question-text');
+const answersList = document.getElementById('answers-list');
+const scoreDisplay = document.getElementById('score');
+const nextButton = document.getElementById('next-button');
+const timerDiv = document.getElementById('timer');
+const timeLeftSpan = document.getElementById('time-left');
+const livesDiv = document.getElementById('lives');
+const lifeCountSpan = document.getElementById('life-count');
 
-  let questions = [];
-  let currentQuestionIndex = 0;
-  let score = 0;
-  
-  async function sendScore(score) {
-    try {
-      await fetch('/score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ score })
-      });
-    } catch (e) {
-      console.error('Falha ao enviar score:', e);
-    }
+nextButton.style.display = 'none';
+
+// Função para iniciar o quiz (chamada do index.html)
+window.startQuiz = async function(gameModeName, catId) {
+  selectedGameModeName = gameModeName;
+
+  // Inicializa vidas e tempo
+  if (selectedGameModeName === 'cronometro') {
+    timeLeft = 60; // ou o tempo que quiser
+    timerDiv.classList.remove('hidden');
+    livesDiv.classList.add('hidden');
+    timeLeftSpan.innerText = timeLeft;
+    startTimer();
+  } else if (selectedGameModeName === 'maratona') {
+    lives = 3;
+    livesDiv.classList.remove('hidden');
+    timerDiv.classList.add('hidden');
+    lifeCountSpan.innerText = lives;
+  } else {
+    timerDiv.classList.add('hidden');
+    livesDiv.classList.add('hidden');
   }
-  
-  const questionText = document.getElementById('question-text');
-  const answersList  = document.getElementById('answers-list');
-  const scoreDisplay = document.getElementById('score');
-  const nextButton   = document.getElementById('next-button');
-  const categorySelect = document.getElementById('category');
-  const subcategorySelect = document.getElementById('subcategory');
-  const startQuizBtn = document.getElementById('start-quiz');
-  const quizContainer = document.getElementById('quiz');
 
-  
-  categorySelect.addEventListener('change', () => {
-    const selected = categorySelect.value;
-    subcategorySelect.innerHTML = '<option value="">-- Selecione --</option>';
-  
-    if (selected === 'esportes') {
-      subcategorySelect.innerHTML += '<option value="futebol">Futebol</option>';
-      subcategorySelect.style.display = 'inline-block';
-    } else if (selected === 'ciencia') {
-      subcategorySelect.innerHTML += '<option value="astronomia">Astronomia</option>';
-      subcategorySelect.style.display = 'inline-block';
-    } else {
-      subcategorySelect.style.display = 'none'; // Oculta subcategoria em “Geral”
-    }
-  });
-  
+  // Inicia sessão no backend
+  currentQuizSessionId = await startQuizSession(gameModeName);
+  if (!currentQuizSessionId) return;
 
-  startQuizBtn.addEventListener('click', () => {
-    const cat = categorySelect.value;
-    const sub = subcategorySelect.value;
-  
-    if (!cat) {
-      alert("Selecione uma categoria!");
+  try {
+    const res = await fetch(`/questions?category_id=${catId}`, { credentials: 'include' });
+    if (res.status === 401) {
+      alert('Você precisa estar logado para jogar. Faça login.');
+      window.location.href = '/';
       return;
     }
-  
-    if (cat === 'geral') {
-      questions = shuffle([...questionsOriginal]);
-    } else {
-      if (!sub) {
-        alert("Selecione uma subcategoria!");
+    if (!res.ok) throw new Error('Erro ao carregar perguntas');
+
+    const data = await res.json();
+
+    questions = data.map(q => {
+      const correctAnswerObj = q.answers.find(a => a.is_correct);
+      return {
+        question: q.text,
+        answers: q.answers.map(a => a.text),
+        correctAnswer: correctAnswerObj ? correctAnswerObj.text : null
+      };
+    }).filter(q => q.correctAnswer !== null);
+
+    if (questions.length === 0) {
+      alert('Nenhuma pergunta válida encontrada para essa categoria.');
+      return;
+    }
+
+    questions = shuffle(questions);
+    currentQuestionIndex = 0;
+    score = 0;
+    scoreDisplay.innerText = score;
+
+    document.getElementById("quiz-container").classList.remove("hidden");
+    document.getElementById("category-select").classList.add("hidden");
+    document.getElementById("mode-select").classList.add("hidden");
+
+    loadQuestion();
+  } catch (err) {
+    alert('Erro ao carregar perguntas: ' + err.message);
+  }
+};
+
+// Timer do modo cronometro
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timeLeftSpan.innerText = timeLeft;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      alert(`Tempo esgotado! Sua pontuação final foi: ${score}`);
+      finishQuiz();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+}
+
+// Função para carregar a pergunta atual
+function loadQuestion() {
+  if (currentQuestionIndex >= questions.length) {
+    alert(`Parabéns! Você venceu o quiz!\nPontuação final: ${score}`);
+    finishQuiz();
+    return;
+  }
+
+  const q = questions[currentQuestionIndex];
+  questionText.innerText = q.question;
+
+  const shuffledAnswers = shuffle([...q.answers]);
+  answersList.innerHTML = '';
+
+  shuffledAnswers.forEach(answer => {
+    const li = document.createElement('li');
+    li.innerText = answer;
+    li.style.cursor = 'pointer';
+    li.addEventListener('click', () => checkAnswer(answer));
+    answersList.appendChild(li);
+  });
+
+  nextButton.style.display = 'none';
+}
+
+function checkAnswer(selectedAnswer) {
+  const q = questions[currentQuestionIndex];
+  const answerItems = answersList.querySelectorAll('li');
+
+  answerItems.forEach(li => {
+    li.style.pointerEvents = "none";
+    if (li.innerText === q.correctAnswer) li.classList.add('correct');
+    if (li.innerText === selectedAnswer && selectedAnswer !== q.correctAnswer) li.classList.add('incorrect');
+  });
+
+  if (selectedAnswer === q.correctAnswer) {
+    score++;
+    scoreDisplay.innerText = score;
+  } else {
+    if (selectedGameModeName === 'maratona') {
+      lives--;
+      lifeCountSpan.innerText = lives;
+      if (lives <= 0) {
+        alert('Suas vidas acabaram! Fim do jogo.');
+        finishQuiz();
         return;
       }
-      questions = shuffle([...allQuestions[cat][sub]]);
     }
-  
-    currentQuestionIndex = 0;
-    score = 0;
-    scoreDisplay.innerText = score;
-  
-    quizContainer.style.display = "block";
-    loadQuestion();
-  });
-  
-
-  nextButton.addEventListener('click', () => {
-    loadQuestion();
-    nextButton.style.display = 'none';
-  });
-  
-  function shuffle(array) {
-    let currentIndex = array.length, temp, randomIndex;
-    while (currentIndex !== 0) {
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-      temp = array[currentIndex];
-      array[currentIndex] = array[randomIndex];
-      array[randomIndex] = temp;
-    }
-    return array;
+    // No modo cronometro, não perde vida, só não pontua
   }
-  
-  function loadQuestion() {
-    if (currentQuestionIndex >= questions.length) {
-      alert(`Parabéns! Você venceu o quiz!\nPontuação final: ${score}`);
-      resetGame();
+
+  currentQuestionIndex++;
+
+  if (currentQuestionIndex < questions.length) {
+    nextButton.style.display = "inline-block";
+  } else {
+    setTimeout(() => {
+      alert("🎉 Quiz concluído!\nPontuação final: " + score);
+      finishQuiz();
+    }, 1000);
+  }
+}
+
+nextButton.addEventListener('click', () => {
+  loadQuestion();
+});
+
+// Finaliza o quiz (envia score, limpa estado, etc)
+async function finishQuiz() {
+  stopTimer();
+
+  await sendScore(score, null);
+
+  if (currentQuizSessionId) {
+    await endQuizSession(currentQuizSessionId);
+    currentQuizSessionId = null;
+  }
+
+  resetGame();
+}
+
+// Função para resetar o jogo
+function resetGame() {
+  score = 0;
+  currentQuestionIndex = 0;
+  scoreDisplay.innerText = score;
+
+  document.getElementById("quiz-container").classList.add("hidden");
+  document.getElementById('category-select').classList.remove('hidden');
+  document.getElementById('mode-select').classList.remove('hidden');
+  nextButton.style.display = "none";
+
+  timerDiv.classList.add('hidden');
+  livesDiv.classList.add('hidden');
+
+  stopTimer();
+}
+
+function shuffle(array) {
+  let currentIndex = array.length, temp, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    temp = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temp;
+  }
+  return array;
+}
+
+// Funções para comunicação backend (idem seu script original)
+async function sendScore(score, game_mode_id = null) {
+  try {
+    const res = await fetch('/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ score })
+    });
+
+    if (res.status === 401) {
+      alert('Sua sessão expirou. Faça login novamente.');
+      window.location.href = '/';
       return;
     }
-  
-    const q = questions[currentQuestionIndex];
-    questionText.innerText = q.question;
-  
-    const shuffledAnswers = shuffle([...q.answers]);
-  
-    answersList.innerHTML = '';
-    shuffledAnswers.forEach(answer => {
-      const li = document.createElement('li');
-      li.innerText = answer;
-      li.addEventListener('click', () => checkAnswer(answer));
-      answersList.appendChild(li);
-    });
+  } catch (e) {
+    console.error('Falha ao enviar score:', e);
   }
-  
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    resetGame();
-  });
-  
-  function checkAnswer(selectedAnswer) {
-    const q = questions[currentQuestionIndex];
-    const answerItems = answersList.querySelectorAll('li');
-  
-    answerItems.forEach(li => {
-      li.style.pointerEvents = "none";
-      if (li.innerText === q.correctAnswer) {
-        li.classList.add('correct');
-      }
-  
+}
 
-      if (li.innerText === selectedAnswer && selectedAnswer !== q.correctAnswer) {
-        li.classList.add('incorrect');
-      }
+async function startQuizSession(game_mode_name) {
+  try {
+    const res = await fetch('/quiz_sessions/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ game_mode_name })
     });
-  
-    if (selectedAnswer === q.correctAnswer) {
-      score++;
-      scoreDisplay.innerText = score;
-      nextButton.style.display = 'inline-block';
-      currentQuestionIndex++;
-    } else {
-      setTimeout(() => gameOver(), 1000);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || 'Erro ao iniciar sessão do quiz.');
     }
+    const data = await res.json();
+    return data.session_id;
+  } catch (error) {
+    alert('Erro ao iniciar sessão do quiz: ' + error.message);
+    return null;
   }
-  
-  
-  function gameOver() {
-    alert(`Você perdeu! Pontuação: ${score}`);
-    resetGame();
-  }
-  
-  function resetGame() {
-    score = 0;
-    currentQuestionIndex = 0;
-    scoreDisplay.innerText = score;
-  
-    questions = shuffle([...questionsOriginal]);
-    loadQuestion();
-  }
-  
-  // Início do jogo
-  questions = shuffle([...questionsOriginal]);
-  loadQuestion();
+}
 
-  const themeToggle = document.getElementById('theme-toggle');
+async function endQuizSession(sessionId) {
+  try {
+    const res = await fetch(`/quiz_sessions/${sessionId}/end`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || 'Erro ao finalizar sessão do quiz.');
+    }
+  } catch (error) {
+    console.error('Erro ao finalizar sessão:', error.message);
+  }
+}
 
-themeToggle.addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  
-  if (document.body.classList.contains('dark')) {
-    themeToggle.innerText = "☀️ Modo Claro";
-  } else {
-    themeToggle.innerText = "🌙 Modo Escuro";
+// Reset botão
+document.getElementById('btn-reset').addEventListener('click', () => {
+  resetGame();
+  if (currentQuizSessionId) {
+    endQuizSession(currentQuizSessionId);
+    currentQuizSessionId = null;
   }
 });
 
-let mode = null;
-let timeLeft = 60;
-let timerInterval;
-let lives = 3;
-
-function startMode(selectedMode) {
-    mode = selectedMode;
-    questions = shuffle([...allQuestions.esportes.futebol]);
-    currentQuestionIndex = 0;
-    score = 0;
-    scoreDisplay.innerText = score;
-  
-    document.getElementById('mode-select').style.display = 'none';
-    quizContainer.style.display = 'block';
-  
-    if (mode === 'cronometro') {
-      document.getElementById('timer').style.display = 'block';
-      startTimer();
-    }
-  
-    if (mode === 'maratona') {
-      lives = 3;
-      document.getElementById('lives').style.display = 'block';
-      document.getElementById('life-count').innerText = lives;
-    }
-  
-    loadQuestion();
-  }
-
-  function startTimer() {
-    timeLeft = 60;
-    document.getElementById('time-left').innerText = timeLeft;
-  
-    timerInterval = setInterval(() => {
-      timeLeft--;
-      document.getElementById('time-left').innerText = timeLeft;
-  
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        alert("⏰ Tempo esgotado! Sua pontuação: " + score);
-        resetGame();
-      }
-    }, 1000);
-  }
-
-  function checkAnswer(selectedAnswer) {
-    const q = questions[currentQuestionIndex];
-    const answerItems = answersList.querySelectorAll('li');
-  
-    answerItems.forEach(li => {
-      li.style.pointerEvents = "none";
-      if (li.innerText === q.correctAnswer) li.classList.add('correct');
-      if (li.innerText === selectedAnswer && selectedAnswer !== q.correctAnswer) li.classList.add('incorrect');
-    });
-  
-    if (selectedAnswer === q.correctAnswer) {
-      score++;
-      scoreDisplay.innerText = score;
-    } else {
-      if (mode === 'maratona') {
-        lives--;
-        document.getElementById('life-count').innerText = lives;
-  
-        if (lives <= 0) {
-          setTimeout(() => {
-            alert("💀 Você perdeu! Fim da maratona.\nPontuação: " + score);
-            resetGame();
-          }, 1000);
-          return;
-        }
-      }
-    }
-  
-    currentQuestionIndex++;
-    if (currentQuestionIndex < 20 && currentQuestionIndex < questions.length) {
-      nextButton.style.display = "inline-block";
-    } else {
-      setTimeout(() => {
-        alert("🎉 Quiz concluído!\nPontuação final: " + score);
-        resetGame();
-      }, 1000);
-    }
-  }
-  
-  function resetGame() {
-    clearInterval(timerInterval);
-    score = 0;
-    currentQuestionIndex = 0;
-    scoreDisplay.innerText = score;
-    lives = 3;
-    document.getElementById('life-count').innerText = lives;
-  
-    document.getElementById('timer').style.display = 'none';
-    document.getElementById('lives').style.display = 'none';
-    document.getElementById('quiz').style.display = 'none';
-    document.getElementById('mode-select').style.display = 'block';
-  }
+// Tema escuro
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  themeToggle.innerText = document.body.classList.contains('dark') ? "☀️ Modo Claro" : "🌙 Modo Escuro";
+});
 
 document.getElementById('btn-leaderboard').addEventListener('click', () => {
   window.location.href = '/leaderboard.html';
 });
-
+document.getElementById('btn-friends').addEventListener('click', () => {
+  window.location.href = '/friends.html';
+});
